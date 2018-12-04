@@ -1,9 +1,11 @@
-import React, { Component } from 'react';
+import React, { Component } from "react";
+import axios from "axios";
 
-import './App.css';
+import "./App.css";
 
-import Header from './Header/Header';
-import Compose from './Compose/Compose';
+import Header from "./Header/Header";
+import Compose from "./Compose/Compose";
+import Post from "./Post/Post";
 
 class App extends Component {
   constructor() {
@@ -13,38 +15,102 @@ class App extends Component {
       posts: []
     };
 
-    this.updatePost = this.updatePost.bind( this );
-    this.deletePost = this.deletePost.bind( this );
-    this.createPost = this.createPost.bind( this );
+    this.baseurl = "https://practiceapi.devmountain.com/api";
+
+    this.updatePost = this.updatePost.bind(this);
+    this.deletePost = this.deletePost.bind(this);
+    this.createPost = this.createPost.bind(this);
+
+    this.searchPost = this.searchPost.bind(this);
   }
-  
+
   componentDidMount() {
-
+    axios
+      .get(`https://practiceapi.devmountain.com/api/posts`)
+      .then(response => {
+        this.setState({ posts: response.data });
+        console.log("componentDidMount() GET: " + response);
+      });
   }
 
-  updatePost() {
-  
+  updatePost(id, text) {
+    console.log(text);
+    axios
+      .put(`${this.baseurl}/posts?id=${id}`, { text })
+      .then(resp => {
+        console.log(resp);
+        this.setState({ posts: resp.data });
+        // console.log("updatePost() put: " + resp);
+      })
+      .catch(err => {
+        console.log(err);
+      });
   }
 
-  deletePost() {
-
+  deletePost(id) {
+    axios
+      .delete(`${this.baseurl}/posts?id=${id}`)
+      .then(resp => {
+        console.log(resp);
+        this.setState({ posts: resp.data });
+        // console.log("updatePost() put: " + resp);
+      })
+      .catch(err => {
+        console.log(err);
+      });
   }
 
-  createPost() {
+  createPost(text) {
+    axios
+      .post(`${this.baseurl}/posts`, { text })
+      .then(resp => {
+        console.log(resp);
+        this.setState({ posts: resp.data });
+      })
+      .catch(err => {
+        console.log(err);
+      });
+  }
 
+  searchPost(text) {
+    var sPosts = [];
+
+    axios
+      .get(`${this.baseurl}/posts`)
+      .then(resp => {
+        resp.data.map(elm => {
+          if (elm.text.includes(text)) {
+            sPosts.push(elm);
+          }
+        });
+        //console.log(sPosts);
+        this.setState({ posts: sPosts });
+      })
+      .catch(err => {
+        console.log(err);
+      });
   }
 
   render() {
     const { posts } = this.state;
+    console.log(posts);
 
     return (
       <div className="App__parent">
-        <Header />
+        <Header searchPostFn={this.searchPost} />
 
         <section className="App__content">
-
-          <Compose />
-          
+          <Compose createPostFn={this.createPost} />
+          {posts.map(elm => (
+            <Post
+              key={elm.id}
+              text={elm.text}
+              date={elm.date}
+              updatePostFn={this.updatePost}
+              deletePostFn={this.deletePost}
+              id={elm.id}
+            />
+          ))}
         </section>
       </div>
     );
